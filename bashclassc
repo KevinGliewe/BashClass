@@ -1,0 +1,45 @@
+#/bin/bash
+
+bashclassc()
+{
+    # $1: Input file
+    # $2: Output file
+
+    INPUT=$1
+    OUTPUT=$2
+
+    # Get the absolute directory of the input file
+    WORKDIR=$( cd -- "$( dirname -- "${INPUT}" )" &> /dev/null && pwd )
+
+    # Get the input file name
+    INPUTFILE=$(basename -- "${INPUT}")
+
+    # Get the absolute path of the output file
+    OUTPUT="$(cd "$(dirname "$OUTPUT")" && pwd)/$(basename "$OUTPUT")"
+
+    # Create output file
+    touch $OUTPUT
+
+    if [[ $INPUTFILE == *.list ]] ; then
+        docker run -v $WORKDIR:/wd -v $OUTPUT:/app/out.sh -u $UID:$GID kevgl/bashclass:v1.0.0 @/wd/$INPUTFILE -o /app/out.sh
+    else
+        # Create a temporary file to store the list of files to convert
+        TEMPLISTFILE=$(mktemp /tmp/bashclass.sh.XXXXXX)
+        echo "/wd/$INPUTFILE" > $TEMPLISTFILE
+        echo "/stdlib/Integer.bc" >> $TEMPLISTFILE
+        echo "/stdlib/List.bc" >> $TEMPLISTFILE
+        echo "/stdlib/Object.bc" >> $TEMPLISTFILE
+        echo "/stdlib/String.bc" >> $TEMPLISTFILE
+        echo "/stdlib/Utils.bc" >> $TEMPLISTFILE
+
+        docker run -v $TEMPLISTFILE:$TEMPLISTFILE -v $WORKDIR:/wd -v $OUTPUT:/app/out.sh -u $UID:$GID kevgl/bashclass:v1.0.0 @$TEMPLISTFILE -o /app/out.sh
+
+        # Remove the temporary file
+        rm $TEMPLISTFILE
+    fi
+}
+
+# call the function if the script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    bashclassc $1 $2
+fi

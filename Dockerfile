@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:16.04 as builder
 ENV HOME /root
 
 # Intall required packages
@@ -27,7 +27,7 @@ RUN mv /bin/bash /bin/bash.old
 RUN ln -s /usr/local/bin/bash /bin/bash
 
 # Install BashClass
-RUN cd $HOME; git   clone https://github.com/amirbawab/BashClass
+RUN cd $HOME; git   clone https://github.com/KevinGliewe/BashClass
 WORKDIR $HOME/BashClass
 RUN git submodule update --init --recursive
 RUN cmake . -DSYNTAX_ERRORS="${PWD}/resources/src/syntax_errors.json"\
@@ -44,4 +44,19 @@ RUN cmake . -DSYNTAX_ERRORS="${PWD}/resources/src/syntax_errors.json"  \
             -DLEXICAL_STATE_MACHINE="${PWD}/resources/src/lexical_graph.json"
 RUN make bashc
 
-CMD /bin/bash
+RUN mkdir -p /app/lib
+RUN  \
+    mkdir -p /app/lib && \
+    ldd bin/bashc | grep "=> /" | awk '{print $3}' | xargs -I '{}' cp -v '{}' /app/lib && \
+    cp -v bin/bashc /app && \
+    cp -r example/lib/ /stdlib
+
+
+FROM ubuntu:16.04 as app
+
+COPY --from=builder /stdlib /stdlib
+COPY --from=builder /app /app
+ENV LD_LIBRARY_PATH=/app/lib
+
+WORKDIR /wd
+ENTRYPOINT ["/app/bashc"]

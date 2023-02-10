@@ -1,6 +1,6 @@
+/stdlib/Integer.bc
+/stdlib/List.bc
+/stdlib/Object.bc
+/stdlib/String.bc
+/stdlib/Utils.bc
 input/Tutorial.bc
-lib/Integer.bc
-lib/List.bc
-lib/Object.bc
-lib/String.bc
-lib/Utils.bc

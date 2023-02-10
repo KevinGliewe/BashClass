@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Get the absolute path of the directory containing this script
+BASEDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# Include the bashclassc tool
+. $BASEDIR/bashclassc
+
+# Get the first argument (the name of the script to execute)
+EXECUTEDFILE=$1
+
+# Create a temporary file to store the converted script
+TEMPSCRIPT=$(mktemp /tmp/bashclass.sh.XXXXXX)
+
+# Convert the script to the temporary file
+bashclassc $EXECUTEDFILE $TEMPSCRIPT
+
+# Remove all arguments before the first '--'
+parse=true
+for arg do
+  [ "$arg" == '--' ] && parse=false
+  shift
+  if $parse && [ "${arg:0:1}" != '-' ]
+  then
+    echo handling $arg
+  else
+    set "$@" "$arg"
+  fi
+done
+
+# Execute the temporary file
+. $TEMPSCRIPT
+
+# Remove the temporary file
+rm $TEMPSCRIPT
